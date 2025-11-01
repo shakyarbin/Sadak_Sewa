@@ -12,9 +12,11 @@ import os
 import numpy as np
 from numpy import ndarray
 
+HG_FACE_API_KEY = "xxxx"
+
 def LoadModelPaths():    
     # Login for Hugging Face
-    # login(token="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")
+    login(token="HG_FACE_API_KEY")
 
     # Downloading Models
     # repo_id = Hugging Face repo name
