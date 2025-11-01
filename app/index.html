@@ -1,0 +1,350 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sadak Sewa</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+      :root {
+          --primary: #4ade80;
+          --primary-dark: #22c55e;
+          --bg: #f8fafc;
+          --card-bg: #ffffff;
+          --text: #0f172a;
+          --radius: 16px;
+          --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      }
+
+      body {
+          margin: 0;
+          min-height: 100vh;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background: var(--bg);
+          color: var(--text);
+          display: flex;
+          flex-direction: column;
+      }
+      /* --- Header --- */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        border-bottom: 1px solid #d0e0e0;
+        padding: 12px 32px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .header-left img {
+        height: 34px;
+        width: 34px;
+        object-fit: contain;
+      }
+
+      .header-left h2 {
+        font-size: 20px;
+        margin: 0;
+        color: var(--primary-dark);
+        font-weight: 600;
+        letter-spacing: 0.4px;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .header-right button {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background 0.2s ease;
+      }
+
+      .header-right button:hover {
+        background-color: var(--primary-dark);
+      }
+
+      @media (max-width: 520px) {
+        header {
+          padding: 10px 20px;
+        }
+        .header-right {
+          gap: 8px;
+        }
+        .header-right button {
+          padding: 6px 12px;
+          font-size: 13px;
+        }
+      }
+
+      /* --- Main Content --- */
+      .container {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 2rem 1rem;
+          max-width: 800px;
+          margin: 0 auto;
+      }
+
+      h1 {
+          font-size: 1.875rem;
+          font-weight: 600;
+          margin-bottom: 2rem;
+          text-align: center;
+      }
+
+      .upload-container {
+          width: 100%;
+          background: var(--card-bg);
+          border-radius: var(--radius);
+          padding: 2rem;
+          text-align: center;
+          border: 2px dashed #e2e8f0;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: var(--shadow);
+      }
+
+      .upload-container:hover {
+          border-color: var(--primary);
+      }
+
+      #preview {
+          max-width: 100%;
+          border-radius: var(--radius);
+          margin: 1.5rem 0;
+          box-shadow: var(--shadow);
+      }
+
+      #submitBtn {
+          background: var(--primary);
+          color: white;
+          border: none;
+          padding: 0.875rem 1.75rem;
+          border-radius: var(--radius);
+          font-size: 1rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: var(--shadow);
+      }
+
+      #submitBtn:hover {
+          background: var(--primary-dark);
+      }
+
+      .loading {
+          display: none;
+          margin-top: 1rem;
+          color: var(--text);
+      }
+
+      #result {
+          margin-top: 1.5rem;
+          padding: 1rem;
+          border-radius: var(--radius);
+          background: var(--card-bg);
+          box-shadow: var(--shadow);
+      }
+
+      @media (max-width: 520px) {
+        header {
+          padding: 10px 20px;
+        }
+        .container {
+          margin-top: 70px;
+          padding: 0 16px;
+        }
+        .btn-primary, .btn-icon {
+          width: 100%;
+        }
+      }
+      /* Circular Capture Button Styles */
+      .capture-container {
+        position: relative;
+        margin: 2rem 0;
+      }
+
+      .capture-btn {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: url('/static/CaptureButton.jpg') center/cover;
+        border: 4px solid var(--primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .capture-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+      }
+
+      .capture-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+      }
+
+      .capture-btn:active {
+        transform: scale(0.95);
+      }
+
+      .capture-icon {
+        font-size: 2.5rem;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        z-index: 2;
+      }
+
+      .capture-label {
+        margin-top: 1rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        text-align: center;
+      }
+
+      .pulse-ring {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        border: 2px solid var(--primary);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+        pointer-events: none;
+      }
+      .btn-submit {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 0;              /* balanced height */
+        border-radius: 10px;          /* small, clean corners */
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow);
+        width: 280px;                 /* nice wide shape */
+        text-align: center;
+      }
+
+      .btn-submit:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+      }
+
+      /* ✅ Mobile version */
+      @media (max-width: 520px) {
+        .btn-submit {
+          width: 95%;                 /* fill most of mobile screen */
+          max-width: 350px;
+          padding: 14px 0;            /* slightly taller for touch */
+          border-radius: 8px;         /* keep it rectangular */
+          font-size: 1rem;
+        }
+      }
+
+      .buttons-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 2rem 0;
+      }
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1.2);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- 🌊 Header -->
+    <header>
+      <div class="header-left">
+        <img src="/static/logo.png" alt="Sadak Sewa Logo">
+        <h2>Sadak Sewa</h2>
+      </div>
+      <div class="header-right">
+        <button onclick="window.location.href='/admin'">Admin</button>
+        <button onclick="window.location.href='/dashboard'">DashBoard</button>
+      </div>
+    </header>
+
+    <!-- 📷 Main Section -->
+    <div class="container">
+      <h1>🚧 Report a Road Issue</h1>
+      <p>Help your city fix road problems quickly. Capture and submit!</p>
+
+      <div class="legend">
+        <span class="dot pothole"></span>Pothole
+        <span class="dot garbage"></span>Garbage
+        <span class="dot lamp"></span>Lamp
+      </div>
+
+      <div class="video-wrapper">
+        <video id="camera" autoplay playsinline></video>
+        <canvas id="snapshot"></canvas>
+      </div>
+      
+      <div class="buttons-container">
+        <button id="flipCamera" class="btn-icon">🔄 Flip</button>
+        
+        <div class="capture-container">
+          <div class="capture-btn" id="capturePhoto">
+            <div class="capture-icon">📸</div>
+            <div class="pulse-ring"></div>
+          </div>
+          <div class="capture-label">CAPTURE PHOTO</div>
+        </div>
+
+        <button id="submitReport" class="btn-submit">🚀 Submit Report</button>
+      </div>
+
+      <div class="info">
+        <label>Location</label>
+        <input id="location" readonly placeholder="Detecting location..." />
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  </body>
+  </html>

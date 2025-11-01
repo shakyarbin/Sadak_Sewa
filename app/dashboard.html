@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nepal Road Damage Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --success-color: #27ae60;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8f9fa;
+        color: #333;
+      }
+
+      .dashboard-header {
+        background: linear-gradient(135deg, var(--primary-color), #1a2530);
+        color: white;
+        padding: 1.5rem 0;
+        border-radius: 0 0 10px 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease;
+        margin-bottom: 1.5rem;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+      }
+
+      .card-header {
+        background-color: white;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+        padding: 1rem 1.25rem;
+        border-radius: 10px 10px 0 0 !important;
+      }
+
+      .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .trend-up {
+        color: var(--success-color);
+      }
+
+      .trend-down {
+        color: var(--danger-color);
+      }
+
+      .map-container {
+        height: 400px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .city-marker {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--danger-color);
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+      }
+
+      .city-marker.medium {
+        background-color: var(--warning-color);
+      }
+
+      .city-marker.low {
+        background-color: var(--success-color);
+      }
+
+      .city-marker::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: inherit;
+        opacity: 0.4;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 0.4;
+        }
+        70% {
+          transform: translate(-50%, -50%) scale(2);
+          opacity: 0;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(2.1);
+          opacity: 0;
+        }
+      }
+
+      .table th {
+        border-top: none;
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      .progress {
+        height: 8px;
+        margin-top: 5px;
+      }
+
+      .filter-section {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      footer {
+        margin-top: 3rem;
+        padding: 1.5rem 0;
+        background-color: var(--primary-color);
+        color: white;
+        text-align: center;
+        border-radius: 10px 10px 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-header">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h1 class="h2 mb-1">Nepal Road Damage Dashboard</h1>
+            <p class="mb-0">
+              Monitoring and tracking road damage reports and treatments across
+              major cities
+            </p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <div class="btn-group">
+              <button class="btn btn-outline-light">Daily</button>
+              <button class="btn btn-outline-light active">Weekly</button>
+              <button class="btn btn-outline-light">Monthly</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Filter Section -->
+      <div class="filter-section">
+        <div class="row">
+          <div class="col-md-3">
+            <label for="timeRange" class="form-label">Time Range</label>
+            <select class="form-select" id="timeRange">
+              <option selected>Last 30 Days</option>
+              <option>Last 90 Days</option>
+              <option>Last 6 Months</option>
+              <option>Last Year</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="cityFilter" class="form-label">City</label>
+            <select class="form-select" id="cityFilter">
+              <option selected>All Cities</option>
+              <option>Kathmandu</option>
+              <option>Pokhara</option>
+              <option>Lalitpur</option>
+              <option>Bharatpur</option>
+              <option>Biratnagar</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="damageType" class="form-label">Damage Type</label>
+            <select class="form-select" id="damageType">
+              <option selected>All Types</option>
+              <option>Potholes</option>
+              <option>Cracks</option>
+              <option>Surface Damage</option>
+              <option>Flood Damage</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="statusFilter" class="form-label">Status</label>
+            <select class="form-select" id="statusFilter">
+              <option selected>All Status</option>
+              <option>Reported</option>
+              <option>Under Review</option>
+              <option>Treatment Planned</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="stat-label">Total Reports</div>
+            <div class="stat-value text-primary">1,247</div>
+            <div class="trend-up">↑ 12% from last month</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="stat-label">Treated This Month</div>
+            <div class="stat-value text-success">384</div>
+            <div class="trend-up">↑ 8% from last month</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="stat-label">Avg. Resolution Time</div>
+            <div class="stat-value text-warning">6.2 days</div>
+            <div class="trend-down">↓ 1.3 days from last month</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card stat-card">
+            <div class="stat-label">Satisfaction Rate</div>
+            <div class="stat-value text-info">84%</div>
+            <div class="trend-up">↑ 5% from last month</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts and Map -->
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+              <span>Road Damage Reports Over Time</span>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary active">
+                  Reports
+                </button>
+                <button class="btn btn-outline-secondary">Treatments</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="reportsChart" height="250"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">Damage Types Distribution</div>
+            <div class="card-body">
+              <canvas id="damageTypeChart" height="250"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">Nepal Road Damage Map</div>
+            <div class="card-body">
+              <div class="map-container">
+                <!-- This is a simplified representation of Nepal with city markers -->
+                <div
+                  class="city-marker"
+                  style="top: 30%; left: 45%"
+                  data-city="Kathmandu"
+                ></div>
+                <div
+                  class="city-marker medium"
+                  style="top: 40%; left: 35%"
+                  data-city="Pokhara"
+                ></div>
+                <div
+                  class="city-marker"
+                  style="top: 25%; left: 48%"
+                  data-city="Lalitpur"
+                ></div>
+                <div
+                  class="city-marker low"
+                  style="top: 50%; left: 55%"
+                  data-city="Bharatpur"
+                ></div>
+                <div
+                  class="city-marker"
+                  style="top: 65%; left: 70%"
+                  data-city="Biratnagar"
+                ></div>
+                <div
+                  class="city-marker medium"
+                  style="top: 75%; left: 40%"
+                  data-city="Butwal"
+                ></div>
+                <div
+                  class="city-marker low"
+                  style="top: 55%; left: 30%"
+                  data-city="Nepalgunj"
+                ></div>
+
+                <!-- Simple Nepal outline -->
+                <svg
+                  viewBox="0 0 100 100"
+                  style="width: 100%; height: 100%; opacity: 0.7"
+                >
+                  <path
+                    d="M40,20 L50,25 L55,35 L60,40 L65,50 L70,60 L65,70 L60,75 L50,80 L40,75 L35,70 L30,60 L25,50 L30,40 L35,30 Z"
+                    fill="none"
+                    stroke="#6c757d"
+                    stroke-width="1"
+                  />
+                </svg>
+              </div>
+              <div class="mt-3">
+                <div class="d-flex align-items-center mb-1">
+                  <div
+                    class="bg-danger rounded-circle me-2"
+                    style="width: 12px; height: 12px"
+                  ></div>
+                  <small>High Damage (50+ reports)</small>
+                </div>
+                <div class="d-flex align-items-center mb-1">
+                  <div
+                    class="bg-warning rounded-circle me-2"
+                    style="width: 12px; height: 12px"
+                  ></div>
+                  <small>Medium Damage (20-49 reports)</small>
+                </div>
+                <div class="d-flex align-items-center">
+                  <div
+                    class="bg-success rounded-circle me-2"
+                    style="width: 12px; height: 12px"
+                  ></div>
+                  <small>Low Damage (1-19 reports)</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">City-wise Report Status</div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>City</th>
+                      <th>Total Reports</th>
+                      <th>Treated</th>
+                      <th>In Progress</th>
+                      <th>Pending</th>
+                      <th>Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Kathmandu</td>
+                      <td>428</td>
+                      <td>312</td>
+                      <td>68</td>
+                      <td>48</td>
+                      <td>
+                        <div class="progress">
+                          <div
+                            class="progress-bar bg-success"
+                            style="width: 73%"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Pokhara</td>
+                      <td>195</td>
+                      <td>142</td>
+                      <td>32</td>
+                      <td>21</td>
+                      <td>
+                        <div class="progress">
+                          <div
+                            class="progress-bar bg-success"
+                            style="width: 73%"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Lalitpur</td>
+                      <td>167</td>
+                      <td>128</td>
+                      <td>25</td>
+                      <td>14</td>
+                      <td>
+                        <div class="progress">
+                          <div
+                            class="progress-bar bg-success"
+                            style="width: 77%"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Bharatpur</td>
+                      <td>98</td>
+                      <td>65</td>
+                      <td>18</td>
+                      <td>15</td>
+                      <td>
+                        <div class="progress">
+                          <div
+                            class="progress-bar bg-warning"
+                            style="width: 66%"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Biratnagar</td>
+                      <td>124</td>
+                      <td>84</td>
+                      <td>22</td>
+                      <td>18</td>
+                      <td>
+                        <div class="progress">
+                          <div
+                            class="progress-bar bg-warning"
+                            style="width: 68%"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+    <!-- Nepal Road Damage Heat Map -->
+    <div class="row mt-4">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">Nepal Road Damage Heat Map</div>
+          <div class="card-body text-center">
+            <img
+              src="/static/NepalRoadDamageHeatMap.png"
+              class="img-fluid rounded"
+              alt="Nepal Road Damage Heat Map"
+              style="max-height: 300px"
+            />
+            <div class="mt-2">
+              <small class="text-muted"
+                >Red areas indicate higher road damage concentration</small
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+        </div>
+      </div>
+
+
+      <!-- Recent Activity -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">Recent Road Damage Reports</div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Report ID</th>
+                      <th>Location</th>
+                      <th>Damage Type</th>
+                      <th>Severity</th>
+                      <th>Reported Date</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>#RD-5842</td>
+                      <td>Kathmandu, Bagmati Bridge</td>
+                      <td>Potholes</td>
+                      <td><span class="badge bg-danger">High</span></td>
+                      <td>2023-10-15</td>
+                      <td><span class="badge bg-warning">In Progress</span></td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-primary">
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>#RD-5819</td>
+                      <td>Pokhara, Lakeside Rd</td>
+                      <td>Cracks</td>
+                      <td><span class="badge bg-warning">Medium</span></td>
+                      <td>2023-10-14</td>
+                      <td><span class="badge bg-success">Completed</span></td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-primary">
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>#RD-5796</td>
+                      <td>Lalitpur, Patan Durbar Sq</td>
+                      <td>Surface Damage</td>
+                      <td><span class="badge bg-warning">Medium</span></td>
+                      <td>2023-10-12</td>
+                      <td>
+                        <span class="badge bg-primary">Treatment Planned</span>
+                      </td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-primary">
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>#RD-5783</td>
+                      <td>Bharatpur, Narayanghat</td>
+                      <td>Flood Damage</td>
+                      <td><span class="badge bg-danger">High</span></td>
+                      <td>2023-10-10</td>
+                      <td><span class="badge bg-warning">In Progress</span></td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-primary">
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>#RD-5765</td>
+                      <td>Biratnagar, Koshi Highway</td>
+                      <td>Potholes</td>
+                      <td><span class="badge bg-info">Low</span></td>
+                      <td>2023-10-08</td>
+                      <td><span class="badge bg-success">Completed</span></td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-primary">
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <div class="container">
+        <p class="mb-0">
+          Nepal Road Damage Dashboard &copy; 2023 | Department of Road
+          Infrastructure
+        </p>
+        <small>Data updated: October 16, 2023</small>
+      </div>
+    </footer>
+
+    <script>
+      // Initialize charts when the page loads
+      document.addEventListener("DOMContentLoaded", function () {
+        // Reports Over Time Chart
+        const reportsCtx = document
+          .getElementById("reportsChart")
+          .getContext("2d");
+        const reportsChart = new Chart(reportsCtx, {
+          type: "line",
+          data: {
+            labels: [
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+            ],
+            datasets: [
+              {
+                label: "Damage Reports",
+                data: [85, 92, 78, 94, 112, 108, 135, 142, 128, 147],
+                borderColor: "#e74c3c",
+                backgroundColor: "rgba(231, 76, 60, 0.1)",
+                tension: 0.3,
+                fill: true,
+              },
+              {
+                label: "Treatments Completed",
+                data: [65, 72, 68, 79, 85, 92, 104, 118, 110, 124],
+                borderColor: "#27ae60",
+                backgroundColor: "rgba(39, 174, 96, 0.1)",
+                tension: 0.3,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "top",
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Number of Reports",
+                },
+              },
+            },
+          },
+        });
+
+        // Damage Type Distribution Chart
+        const damageTypeCtx = document
+          .getElementById("damageTypeChart")
+          .getContext("2d");
+        const damageTypeChart = new Chart(damageTypeCtx, {
+          type: "doughnut",
+          data: {
+            labels: [
+              "Potholes",
+              "Cracks",
+              "Surface Damage",
+              "Flood Damage",
+              "Other",
+            ],
+            datasets: [
+              {
+                data: [45, 25, 15, 10, 5],
+                backgroundColor: [
+                  "#e74c3c",
+                  "#f39c12",
+                  "#3498db",
+                  "#9b59b6",
+                  "#95a5a6",
+                ],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "bottom",
+              },
+            },
+          },
+        });
+
+        // Add interactivity to city markers
+        const cityMarkers = document.querySelectorAll(".city-marker");
+        cityMarkers.forEach((marker) => {
+          marker.addEventListener("click", function () {
+            const city = this.getAttribute("data-city");
+            alert(`Showing details for ${city}`);
+            // In a real application, this would filter the dashboard data
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
